@@ -36,30 +36,28 @@ class RSIAnalysis:
         while data_set[self.start_index + 1].rate_date < start_day:
             self.start_index += 1
         self.end_index = len(data_set) - 1
-        self.gains = 0
-        self.loses = 0
 
     def calculate_averages(self, index):
         """
         Calculates the average values of gains and loses.
         :param index: Index value of the day to be analysed.
         """
-        self.gains = 0
+        gains = 0
         gain_count = 0
-        self.loses = 0
+        loses = 0
         lose_count = 0
         i = self.number_of_days - 1
         while i >= 0:
             # if price of today is higher and yesterday's, it is a gain
             if self.data_set[index - i].price > \
                     self.data_set[index - i - 1].price:
-                self.gains = self.gains + self.data_set[index - i].price - \
+                gains = gains + self.data_set[index - i].price - \
                              self.data_set[index - i - 1].price
                 gain_count += 1
             # if price of today is lower then yesterday's, it is a loss
             elif self.data_set[index - i].price < \
                     self.data_set[index - i - 1].price:
-                self.loses = self.loses + \
+                loses = loses + \
                              self.data_set[index - i - 1].price - \
                              self.data_set[index - i].price
                 lose_count += 1
@@ -67,37 +65,38 @@ class RSIAnalysis:
                 None
             i -= 1
         if gain_count == 0:
-            self.gains = 0
+            gains = 0
         else:
-            self.gains /= gain_count
+            gains /= gain_count
         if lose_count == 0:
-            self.loses = 1
+            loses = 1
         else:
-            self.loses /= lose_count
+            loses /= lose_count
 
-    def calculate_rsi_value(self):
+        return gains / loses
+
+    def calculate_rsi_value(self, index):
         """
-        Calculates the RSI value of the day.
+        Firstly calculates averages of gains and losses.
+        Then with these average values, calculating the RSI values.
+        :param index: Index value of the day to be analysed.
         :return: RSI Value between 0-100
         """
-        return 100 - (100 / (1 + (self.gains / self.loses)))
+        return 100 - (100 / (1 + (self.calculate_averages(index))))
 
     def analyse(self):
         """
         Analyses the data for each day between start and end dates.
-        Firstly calculates averages of gains and losses.
-        Then with these average values, calculating the RSI values.
         :return: An array of RSIResult class instances
         contains RSI result values.
         """
         i = self.start_index
         result = []
         while i <= self.end_index:
-            self.calculate_averages(i)
             # creating the RSIResult instance for each day
             result.append(RSIResult(
                 self.data_set[i].rate_date,
-                self.calculate_rsi_value(),
+                self.calculate_rsi_value(i),  # calculated rsi value
                 self.data_set[i].price))
             i += 1
         return result
