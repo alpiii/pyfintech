@@ -5,8 +5,10 @@ import xml.etree.ElementTree as XmlElement
 import urllib
 import Exchange as exc
 from RSIAnalysis import RSIAnalysis
+from ThreeLineBreakAnalysis import ThreeLineBreakAnalysis
 from MongoConnector import MongoConnector
 import datetime
+from matplotlib.patches import Rectangle
 
 
 def read_file(file_name):
@@ -59,7 +61,10 @@ def get_live_rates():
     mc.mongo_insert_rates(rate_data)
 
 
-if __name__ == '__main__':
+def rsi_analysis_sample():
+    """
+    rsi technical analysis sample
+    """
 
     # RSI Parameters
     # Currency code to analyse
@@ -68,13 +73,10 @@ if __name__ == '__main__':
     number_of_days = 14
     # start and end dates of analyse period
     start_day = datetime.datetime(2015, 1, 1)
-    end_day = datetime.datetime(2015, 12, 28)
+    end_day = datetime.datetime(2016, 1, 20)
     # overbought and oversold values
     over_bought = 70
     over_sold = 30
-
-    # getting the live rates and storing them to MongoDB
-    get_live_rates()
 
     # Reading rates with given parameters to be analysed
     mc = MongoConnector()
@@ -112,3 +114,68 @@ if __name__ == '__main__':
     # saving chart as PNG image file
     fig.savefig('RSI_Result.png', dpi=400, bbox_inches='tight')
     print("Created chart PNG file.")
+
+
+def three_line_break_analysis_sample():
+    """
+    three line break technical analysis sample
+    """
+
+    # Three Line Break Parameters
+    # Currency code to analyse
+    currency = 'USD'
+    # number of days to control
+    line_break_control_count = 3
+    # start and end dates of analyse period
+    start_day = datetime.datetime(2015, 6, 1)
+    end_day = datetime.datetime(2016, 1, 20)
+
+    # Reading rates with given parameters to be analysed
+    mc = MongoConnector()
+    rates = mc.mongo_get_rates(currency, start_day,
+                               end_day, line_break_control_count)
+
+    # creating TLB instance and analysing the data
+    tlb = ThreeLineBreakAnalysis(rates, line_break_control_count, start_day)
+    result = tlb.analyse()
+
+    # creating the chart of the result
+    fig = seaborn.plt.figure()
+    locs, labels = seaborn.plt.xticks()
+    fig.axes[0].set_title('Three Line Break (' +
+                          str(line_break_control_count) +
+                          ')     EUR/' + currency + '     ' +
+                          start_day.strftime('%d/%m/%Y') + ' - ' +
+                          end_day.strftime('%d/%m/%Y'))
+    fig.axes[0].set(xticklabels=[])
+
+    a = 0
+    for rs in result:
+        fig.axes[0].plot([a, a], [rs.min_price, rs.max_price], linewidth=0)
+        if rs.color == 'G':
+            # increases are green
+            fig.axes[0].add_patch(Rectangle((a, rs.min_price), 1,
+                                            rs.max_price - rs.min_price,
+                                            fill=False, edgecolor='green',
+                                            lw=1))
+        else:
+            # decreases are red
+            fig.axes[0].add_patch(Rectangle((a, rs.min_price), 1,
+                                            rs.max_price - rs.min_price,
+                                            fill=False, edgecolor='red',
+                                            lw=1))
+        a += 1
+
+    # saving chart as PNG image file
+    fig.savefig('TLB_Result.png', dpi=400, bbox_inches='tight')
+    print("Created chart PNG file.")
+
+
+if __name__ == '__main__':
+
+    # getting the live rates and storing them to MongoDB
+    get_live_rates()
+
+    rsi_analysis_sample()
+
+    three_line_break_analysis_sample()

@@ -11,3 +11,7 @@ Output of example is going to be created as PNG file by seaborn library.
 Whole example code can be found on main file.
 
 
+Included technical analysis methods:
+------------------------------------
+* RSI - Relative Strength Index
+* Three Line Break
