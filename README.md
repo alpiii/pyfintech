@@ -15,3 +15,4 @@ Included technical analysis methods:
 ------------------------------------
 * RSI - Relative Strength Index
 * Three Line Break
+* Bollinger Bands
